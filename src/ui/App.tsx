@@ -3,17 +3,19 @@ import { BundledPacketSource, FilePacketSource } from '../adapters/packetSources
 import type { PacketSource } from '../ports/PacketSource';
 import { navigate, useRoute } from './router';
 import { DocumentsScreen } from './screens/DocumentsScreen';
+import { InboxScreen } from './screens/InboxScreen';
 import { ReturnScreen } from './screens/ReturnScreen';
 import { useWorkpaper } from './store';
 import { TraceDrawer } from './trace/TraceDrawer';
 
 const NAV = [
+  { path: 'inbox', label: 'Inbox' },
   { path: 'return', label: 'Return' },
   { path: 'documents', label: 'Documents' },
 ];
 
 export function App({ source }: { source?: PacketSource }) {
-  const { status, error, index, fingerprint, sourceLabel, load } = useWorkpaper();
+  const { status, error, index, fingerprint, sourceLabel, findings, load } = useWorkpaper();
   const route = useRoute();
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -21,7 +23,7 @@ export function App({ source }: { source?: PacketSource }) {
     void load(source ?? new BundledPacketSource());
   }, [load, source]);
 
-  const screen = route.path[0] ?? 'return';
+  const screen = route.path[0] ?? 'inbox';
 
   return (
     <div className="flex h-screen flex-col bg-white text-slate-900">
@@ -58,11 +60,16 @@ export function App({ source }: { source?: PacketSource }) {
                 onClick={() => navigate({ path: [n.path] })}
               >
                 {n.label}
+                {n.path === 'inbox' && (
+                  <span className="ml-1 rounded bg-rose-100 px-1.5 text-xs text-rose-700">
+                    {findings.filter((f) => f.severity !== 'info').length}
+                  </span>
+                )}
               </button>
             ))}
           </nav>
           <main className="min-w-0 flex-1 overflow-auto">
-            {screen === 'documents' ? <DocumentsScreen /> : <ReturnScreen />}
+            {screen === 'documents' ? <DocumentsScreen /> : screen === 'return' ? <ReturnScreen /> : <InboxScreen />}
           </main>
           {route.trace && <TraceDrawer refId={route.trace} />}
         </div>

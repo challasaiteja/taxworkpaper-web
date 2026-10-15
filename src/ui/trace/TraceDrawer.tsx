@@ -121,6 +121,29 @@ export function TraceDrawer({ refId }: { refId: string }) {
         </button>
       </>
     );
+  } else if (parsed.kind === 'client') {
+    const client = index.packet.client as {
+      questionnaire?: { id: string; question: string; answer: string; answered_by?: string }[];
+      messages?: { id: string; from: string; sent_at: string; text: string }[];
+      call_notes?: { id: string; date: string; notes: string[] }[];
+    };
+    const qa = client.questionnaire?.find((q) => q.id === refId);
+    const msg = client.messages?.find((m) => m.id === refId);
+    const call = client.call_notes?.find((c) => c.id === refId);
+    body = qa ? (
+      <><p className="text-xs text-slate-500">Questionnaire · {qa.answered_by}</p><h2 className="text-lg font-semibold">{qa.question}</h2><p className="mt-2 rounded bg-slate-50 p-2">{qa.answer}</p><UsedBy refId={refId} /></>
+    ) : msg ? (
+      <><p className="text-xs text-slate-500">Message from {msg.from} · {msg.sent_at.slice(0, 10)}</p><p className="mt-2 rounded bg-slate-50 p-2">{msg.text}</p></>
+    ) : call ? (
+      <><p className="text-xs text-slate-500">Call notes · {call.date.slice(0, 10)}</p><ul className="mt-2 list-disc space-y-1 pl-5 text-sm">{call.notes.map((n) => <li key={n}>{n}</li>)}</ul></>
+    ) : (
+      <p className="text-sm text-slate-600">Unknown reference <span className="font-mono">{refId}</span>.</p>
+    );
+  } else if (parsed.kind === 'prefixed') {
+    const label = { agency: 'Tax agency record', py: 'Prior-year record', ref: 'Engine parameter', household: 'Household member', asset: 'Asset', timeline: 'Timeline event', group: 'Group', ext: 'Related return', finding: 'Finding', area: 'Area' }[parsed.prefix];
+    body = (
+      <><p className="text-xs text-slate-500">{label}</p><p className="font-mono text-sm">{parsed.rest}</p><UsedBy refId={refId} /></>
+    );
   } else {
     body = <p className="text-sm text-slate-600">Unknown reference <span className="font-mono">{refId}</span>.</p>;
   }

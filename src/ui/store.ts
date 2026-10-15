@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { SimulatedDocumentSource } from '../adapters/SimulatedDocumentSource';
+import { runChecks } from '../core/checks/registry';
+import type { Finding } from '../core/checks/types';
 import { buildIndex, type PacketIndex } from '../core/graph/index';
 import { loadPacket } from '../core/packet/load';
 import type { DocumentSource } from '../ports/DocumentSource';
@@ -12,6 +14,7 @@ interface WorkpaperState {
   docs?: DocumentSource;
   fingerprint?: string;
   sourceLabel?: string;
+  findings: Finding[];
   load(source: PacketSource): Promise<void>;
 }
 
@@ -19,6 +22,7 @@ let latestLoad = 0;
 
 export const useWorkpaper = create<WorkpaperState>((set) => ({
   status: 'idle',
+  findings: [],
   async load(source) {
     const loadId = ++latestLoad;
     set({ status: 'loading', error: undefined });
@@ -32,7 +36,7 @@ export const useWorkpaper = create<WorkpaperState>((set) => ({
       }
       const index = buildIndex(result.packet);
       set({
-        status: 'ready', index, docs: new SimulatedDocumentSource(index),
+        status: 'ready', index, docs: new SimulatedDocumentSource(index), findings: runChecks(index),
         fingerprint: result.fingerprint, sourceLabel: source.label,
       });
     } catch (e) {

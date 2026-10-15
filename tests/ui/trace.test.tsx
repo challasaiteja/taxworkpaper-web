@@ -45,4 +45,19 @@ describe('TraceDrawer', () => {
     render(<TraceDrawer refId="ev-0001" />);
     expect(screen.getByText(/document D77 is not in this packet/)).toBeTruthy();
   });
+
+  it('describes client answers and agency records instead of "Unknown reference"', () => {
+    const packet = miniPacket();
+    packet.client = { questionnaire: [{ id: 'qa-25', question: 'Eligible?', answer: 'Yes', answered_by: 'N', answered_at: '' }] };
+    const index = buildIndex(packet);
+    useWorkpaper.setState({ status: 'ready', index, docs: new SimulatedDocumentSource(index) });
+    render(<TraceDrawer refId="qa-25" />);
+    expect(screen.getByText('Eligible?')).toBeTruthy();
+    expect(screen.getByText('Yes')).toBeTruthy();
+  });
+
+  it('describes a prefixed ref it cannot render in detail', () => {
+    render(<TraceDrawer refId="agency:/irs_account_transcript_2025/0" />);
+    expect(screen.getByText(/Tax agency record/)).toBeTruthy();
+  });
 });
